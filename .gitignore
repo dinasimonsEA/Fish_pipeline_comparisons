@@ -1,2 +1,2 @@
 # Ignore all files in Data directory
-Data/*
+/Data/
