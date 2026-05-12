@@ -35,8 +35,82 @@ bioc_pkgs <- c("Biostrings", "ShortRead", "dada2")
 ensure_bioc(bioc_pkgs)
 
 # Define functions
+
+## Retrieve all gzipped FASTQ files
+get_files <- function(results_loc) {
+  dir_abspath <- normalizePath(results_loc, mustWork = TRUE)
+  file_paths <- list.files(
+    path = dir_abspath,
+    pattern = "\\.fastq\\.gz$",
+    full.names = TRUE
+  )
+  return(file_paths)
+}
+
+## make manifest table
+make_manifest <- function(path) {
+
+  files <- list.files(
+    path,
+    pattern = "\\.fastq\\.gz$",
+    full.names = TRUE
+  )
+
+  if (length(files) == 0) {
+    stop("No .fastq.gz files found in the directory.")
+  }
+
+  filenames <- basename(files)
+
+  # Detect direction (R1 / R2) in both formats
+  direction <- ifelse(
+    grepl("(_R1_|\\.R1\\.)", filenames),
+    "forward",
+    ifelse(
+      grepl("(_R2_|\\.R2\\.)", filenames),
+      "reverse",
+      NA
+    )
+  )
+
+  if (any(is.na(direction))) {
+    stop("Some files do not contain R1 or R2 identifiers.")
+  }
+
+  # Extract sampleID for both naming schemes
+  sampleID <- ifelse(
+    grepl("_R[12]_", filenames),
+    sub("(_R[12]_.*)$", "", filenames),     # Illumina format
+    sub("(\\.R[12]\\.fastq\\.gz)$", "", filenames)  # Dot format
+  )
+
+  df <- data.frame(
+    sampleID = sampleID,
+    direction = direction,
+    full_path = normalizePath(files),
+    stringsAsFactors = FALSE
+  )
+
+  # Collapse to one row per sample
+  result <- reshape(
+    df,
+    idvar = "sampleID",
+    timevar = "direction",
+    direction = "wide"
+  )
+
+  # Enforce requested column names
+  colnames(result) <- c(
+    "sampleID",
+    "absolute_forward_path",
+    "absolute_backward_path"
+  )
+
+  return(result)
+}
+
 ## Identify universal section of the file names (e.g. 001_R1.fastq.gz)
-guess_file_extension<-function(input_directory){
+identify_file_extension<-function(input_directory){
   extensions <- list()
   n=1
   kill="0"
