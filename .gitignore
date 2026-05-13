@@ -1,2 +1,4 @@
 # Ignore all files in Data directory
 Data/
+
+*.fastq.g
