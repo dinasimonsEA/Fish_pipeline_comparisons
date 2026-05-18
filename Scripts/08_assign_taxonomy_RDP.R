@@ -1,0 +1,20 @@
+# get path
+path<-getwd()
+
+# read in the R objects
+seqtab.nochim <- readRDS(file = paste(path, "/Data/Temp/R_objects/06_seqtab.nochim.rds", sep=""))
+
+# find path for db
+database <- "Data/Databases/Meta-fish-lib/references.12s.miya.dada.taxonomy.v268.fasta"
+
+# assign taxonomy
+taxa <- assignTaxonomy(seqtab.nochim, database, multithread=TRUE, verbose=T, tryRC = TRUE)
+
+## get db_name to add onto output
+db_name <- basename(database)
+
+# write taxonomy table
+write.table(taxa, file = paste(path, "/Results/08_assigned_taxonomy_", db_name, ".csv", sep=""))
+
+# write out R objects for use later
+saveRDS(taxa, file = paste(path, "/Data/Temp/R_objects/08_taxa.rds", sep=""))
