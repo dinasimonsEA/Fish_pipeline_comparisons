@@ -27,14 +27,14 @@ ensure_bioc <- function(pkgs) {
 }
 
 ## CRAN packages
-cran_pkgs <- c("devtools", "ggplot2", "optparse")
+cran_pkgs <- c("devtools", "ggplot2", "optparse", "taxonomizr")
 ensure_cran(cran_pkgs)
 
 ## Bioconductor packages
-bioc_pkgs <- c("Biostrings", "ShortRead", "dada2")
+bioc_pkgs <- c("Biostrings", "ShortRead", "dada2", "phyloseq")
 ensure_bioc(bioc_pkgs)
 
-# Define functions
+# Define other functions
 
 ## Retrieve all gzipped FASTQ files
 get_files <- function(results_loc) {
@@ -109,7 +109,7 @@ make_manifest <- function(path) {
   return(result)
 }
 
-## Identify universal section of the file names (e.g. 001_R1.fastq.gz)
+## Function to identify universal section of the file names (e.g. 001_R1.fastq.gz) - not working for hard file names (made new above)
 identify_file_extension<-function(input_directory){
   extensions <- list()
   n=1
