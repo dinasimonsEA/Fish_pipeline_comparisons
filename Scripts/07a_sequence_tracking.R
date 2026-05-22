@@ -1,4 +1,4 @@
-# script for sequence tracking
+# script for sequence tracking dada2
 
 # get path
 path<-getwd()
