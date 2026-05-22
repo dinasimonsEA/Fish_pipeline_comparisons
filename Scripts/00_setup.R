@@ -27,11 +27,11 @@ ensure_bioc <- function(pkgs) {
 }
 
 ## CRAN packages
-cran_pkgs <- c("devtools", "ggplot2", "optparse", "taxonomizr")
+cran_pkgs <- c("Rcpp", "devtools", "ggplot2", "optparse","taxonomizr")
 ensure_cran(cran_pkgs)
 
 ## Bioconductor packages
-bioc_pkgs <- c("Biostrings", "ShortRead", "dada2", "phyloseq")
+bioc_pkgs <- c("Biostrings", "ShortRead", "dada2","phyloseq")
 ensure_bioc(bioc_pkgs)
 
 # Define other functions
