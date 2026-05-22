@@ -52,7 +52,7 @@ write(output_fasta, paste(path, "/Data/Processed/06_ASV_seqs_DADA2.fasta", sep="
 
 # write out ASV counts
 tab <- t(seqtab.nochim)
-write.table(tab, file = paste(path, "/Data/Processed/06_ASV_counts.tsv", sep=""), sep="\t", quote=F, col.names=NA)
+write.table(tab, file = paste(path, "/Data/Processed/06_ASV_counts_DADA2.tsv", sep=""), sep="\t", quote=F, col.names=NA)
 
 ## write out R objects for use later
 saveRDS(dadaFs, file = paste(path, "/Data/Temp/R_objects/06_dadaFs.rds", sep=""))
