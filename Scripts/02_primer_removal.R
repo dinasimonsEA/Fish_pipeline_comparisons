@@ -16,7 +16,6 @@ allOrients <- function(primer) {
   return(sapply(orients, toString))  # Convert back to character vector
 }
 
-
 message("Step 1: Identifying primers")
 Sys.sleep(1)
 
@@ -32,7 +31,7 @@ FWD.orients <- allOrients(FWD)
 REV.orients <- allOrients(REV)
 
 # redefine filtNs based on what is actually in the dirs (sometimes an input sample is completely removed by filterAndTrim)
-filt_dir <- file.path(path, "Data/Temp/filtN")
+filt_dir <- file.path(path, "Data/Temp/01_filtN")
 
 fnFs.filtN <- sort(
   file.path(
@@ -68,15 +67,18 @@ pre_trim_primer_counts <- rbind(FWD.ForwardReads = sapply(FWD.orients, primerHit
 print("Table for pre-trimmed primer counts:")
 print(pre_trim_primer_counts)
 
+# ensure directory exists
+dir.create(file.path(path, "Data/Temp/02_primer_removal/"), recursive = TRUE, showWarnings = FALSE)
+
 ## write tables
-write.table(pre_trim_primer_counts, paste(path, "/Data/Temp/02_pre_trim_primer_counts.tsv", sep=""), col.names=NA, sep="\t")
+write.table(pre_trim_primer_counts, paste(path, "/Data/Temp/02_primer_removal/02_pre_trim_primer_counts.tsv", sep=""), col.names=NA, sep="\t")
 
 # now run cutadapt
 message("Step 2: Running cutadapt")
 Sys.sleep(1)
 
 ## create directory for cutadapt
-path.cut <- file.path(paste(path, "/Data/Temp/cutadapt", sep=""))
+path.cut <- file.path(paste(path, "/Data/Temp/02_primer_removal/cutadapt", sep=""))
 if(!dir.exists(path.cut)) dir.create(path.cut)
 
 # specify options needed by cutadapt
@@ -91,8 +93,8 @@ print(R1.flags)
 print(R2.flags)
 
 ## redefine the cut dirs based on what is going in
-fnFs.cut <- gsub("/filtN", "/cutadapt", fnFs.filtN)
-fnRs.cut <- gsub("/filtN", "/cutadapt", fnRs.filtN)
+fnFs.cut <- gsub("/01_filtN", "/02_primer_removal/cutadapt", fnFs.filtN)
+fnRs.cut <- gsub("/01_filtN", "/02_primer_removal/cutadapt", fnRs.filtN)
 
 ## write objects to pass to next script
 saveRDS(fnFs.cut, file = paste(path, "/Data/Temp/R_objects/02_fnFs.cut.rds", sep=""))
@@ -144,5 +146,5 @@ print("Table for post-trimmed primer counts:")
 print(post_trim_primer_counts)
 
 # write post trim table
-write.table(post_trim_primer_counts, paste(path, "/Data/Temp/02_post_trim_primer_counts.tsv", sep=""), col.names=NA)   
+write.table(post_trim_primer_counts, paste(path, "/Data/Temp/02_primer_removal/02_post_trim_primer_counts.tsv", sep=""), col.names=NA)   
 
