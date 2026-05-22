@@ -21,7 +21,7 @@ errR <- learnErrors(filtRs[exists], multithread = TRUE, nbases = 2e+08)
 
 ## write out error rates for use later
 saveRDS(errF, file = paste(path,"/Data/Temp/R_objects/05_errF.rds",sep=""))
-saveRDS(errR, file = paste(path,"/Data/Temp//R_objects/05_errR.rds",sep=""))
+saveRDS(errR, file = paste(path,"/Data/Temp/R_objects/05_errR.rds",sep=""))
 
 # write plot to file for inspection
 pdf(file = paste(path,"/Results/05_error_rate_plots.pdf", sep=""), width = 10, height = 10)

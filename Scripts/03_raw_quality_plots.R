@@ -13,6 +13,7 @@ sample.names <- manifest$sampleID
 print("Sample names:")
 print(sample.names)
 saveRDS(sample.names, file=paste(path, "/Data/Temp/R_objects/03_sample_names.rds", sep=""))
+write.table(sample.names, file=paste(path, "/Data/Temp/03_sample_names.txt", sep=""))
 
 # write plot to file for inspection
 pdf(file = paste(path,"/Results/03_pre_trim_quality_plots.pdf", sep=""),   # The directory you want to save the file into

@@ -9,8 +9,8 @@ fnFs.cut <- readRDS(file = paste(path,"/Data/Temp/R_objects/02_fnFs.cut.rds",sep
 fnRs.cut <- readRDS(file = paste(path,"/Data/Temp/R_objects/02_fnRs.cut.rds",sep=""))
 
 # set up filepaths for output files
-fnFs.filtN <- file.path(path, "/Data/Temp/filterAndTrim", basename(fnFs.cut))
-fnRs.filtN <- file.path(path, "/Data/Temp/filterAndTrim", basename(fnRs.cut))
+fnFs.filtN <- file.path(path, "/Data/Temp/04_filterAndTrim", basename(fnFs.cut))
+fnRs.filtN <- file.path(path, "/Data/Temp/04_filterAndTrim", basename(fnRs.cut))
 
 # run filterAndTrim based on user defined parameters
 out <- filterAndTrim(fnFs.cut, fnFs.filtN, fnRs.cut, fnRs.filtN,
@@ -18,10 +18,20 @@ maxN = 0, maxEE = maxEE, truncQ = truncQ, minLen = minLen, truncLen = truncLen, 
 
 # write objects to pass to next script
 saveRDS(fnFs.filtN, file = paste(path, "/Data/Temp/R_objects/04_fnFs.filtN.rds" ,sep=""))
+write.table(fnFs.filtN, file = paste(path, "/Data/Temp/04_filterAndTrim/04_fnFs.filtN.txt" ,sep="")) # for VSEARCH
+
 saveRDS(fnRs.filtN, file = paste(path, "/Data/Temp/R_objects/04_fnRs.filtN.rds" ,sep=""))
+write.table(fnRs.filtN, file = paste(path, "/Data/Temp/04_filterAndTrim/04_fnRs.filtN.txt" ,sep="")) # for VSEARCH
+
 saveRDS(out, file = paste(path, "/Data/Temp/R_objects/04_out.rds", sep=""))
 
 # generate quality plots on the quality-trimmed data
 pdf(file = paste(path,"/Results/04_post_trim_quality_plots.pdf", sep=""), 
         width = 10,
         height = 10)
+
+# create new manifest for filtered samples
+filtered_data_loc <- "Data/Temp/04_filterAndTrim"
+manifest_filtered <- make_manifest(filtered_data_loc)
+write.csv(manifest_filtered, "Data/Temp/04_filterAndTrim/04_manifest_filtered.csv")
+head(manifest_filtered)
