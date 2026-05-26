@@ -1,51 +1,45 @@
 # script for condensing taxonomy for BLAST outputs using LCA
 # uses taxonomiser
 
-# get Database
-options(timeout = 6000)  # increase to ~100 minutes
-prepareDatabase('accessionTaxa.sql')
+# accession database-----------------------------------------
 
-# get BLAST results
-blastResults_MFL <- read.table('Data/Processed/08b_ASVs_blast_Metafishlib.txt',header=FALSE,stringsAsFactors=FALSE)
-blastResults_NCBI <- read.table('Data/Processed/08b_ASVs_blast_NCBI.txt',header=FALSE,stringsAsFactors=FALSE)
+## more standard options but they don't work in DASH - other code in main notebook
+#options(timeout = 6000)  # increase to ~100 minutes
+#taxonomizr::prepareDatabase('accessionTaxa.sql')
 
-# Assigning taxonomy
+#direct download
+#wget https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz
 
-## Producing accession numbers
-accessions_MFL<-sapply(strsplit(blastResults_MFL[,2],'\\|'),'[',4) ## grab the 4th |-separated field from the reference name in the second column
-accessions_NCBI<-sapply(strsplit(blastResults_NCBI[,2],'\\|'),'[',4)
+#prepareDatabase(
+  #sqlFile = "/Volumes/prd_dash_lab/ea_csg_research_edna_restricted/shared_external_volume/Fish_pipeline_comparison/Databases/accessionTaxa.sql",
+  #accessionTaxaFiles = "/Volumes/prd_dash_lab/ea_csg_research_edna_restricted/shared_external_volume/Fish_pipeline_comparison/Databases/nucl_gb.accession2taxid.gz")
 
-## Finding taxonomy for NCBI accession numbers
-### convert NCBI accession numbers to taxonomic IDs
-taxaId_MFL<-accessionToTaxa(accessions_MFL,"accessionTaxa.sql")
-print("Preview of taxa IDs for MFL:")
-print(head(taxaId_MFL))
+# Getting info ------------------------------------------
+dada2_accessions <- BLAST_DADA2_output$sseqid 
+VSEARCH_accessions <- BLAST_VSEARCH_output$sseqid 
 
-taxaId_NCBI<-accessionToTaxa(accessions_NCBI,"accessionTaxa.sql")
-print("Preview of taxa IDs for NCBI:")
-print(head(taxaId_NCBI))
+## get taxonomy for names provided from BLAST
+data2_taxonomy <- getTaxonomy(taxaId,'accessionTaxa.sql')
+
+
+#taxaId_NCBI<-accessionToTaxa(accessions_NCBI,"accessionTaxa.sql")
+#print("Preview of taxa IDs for NCBI:")
+#print(head(taxaId_NCBI))
 
 ### get the taxonomy for those IDs
-taxa_MFL <- getTaxonomy(taxaId,'accessionTaxa.sql')
-print("Preview of taxa for MFL:")
-print(head(taxa_MFL))
-
-taxa_NCBI <- getTaxonomy(taxaId,'accessionTaxa.sql')
-print("Preview of taxa for NCBI:")
-print(head(taxa_NCBI))
+taxa_DADA2 <- getTaxonomy(taxaId,'accessionTaxa.sql')
+print("Preview of taxa for DADA2:")
+print(head(taxa_DADA2))
 
 ## find common names 
-common_MFL <- getCommon(taxaId,'accessionTaxa.sql')
-print("Preview of common taxa names for MFL:")
-print(head(common_MFL))
-
-common_NCBI <- getCommon(taxaId,'accessionTaxa.sql')
-print("Preview of common taxa names for NCBI:")
-print(head(common_NCBI))
+common_DADA2 <- getCommon(taxaId,'accessionTaxa.sql')
+print("Preview of common taxa names for DADA2:")
+print(head(common_DADA2))
 
 ## Condense multiple taxonomic assignments to their most recent common branch
-taxa_LCA_MFL <- condenseTaxa(taxa_MFL)
-taxa_LCA_NCBI <- condenseTaxa(common_NCBI)
+taxa_LCA_DADA2 <- condenseTaxa(taxa_DADA2)
+
+#taxa_LCA_NCBI <- condenseTaxa(common_NCBI)
 
 # join all taxonomy data
 

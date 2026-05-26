@@ -1,27 +1,40 @@
 # Script to generate error models
 
-# get wd & data location
-path<-getwd()
-test_data_loc <- paste("Data/Raw/RingTrial_Sean")
+# get wd
+path <- getwd()
+
+# Dataset-specific directories
+output_dir  <- file.path(path, "Data", "Temp", test_data_name)
+rds_dir     <- file.path(output_dir, "R_objects")
+results_dir <- file.path(path, "Results", test_data_name)
+
+# ensure directories exist
+dir.create(rds_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 
 # read in the lists of filtered reads
-filtFs <- readRDS(file = paste(path, "/Data/Temp/R_objects/04_fnFs.filtN.rds" ,sep=""))
-filtRs <- readRDS(file = paste(path, "/Data/Temp/R_objects/04_fnRs.filtN.rds" ,sep=""))
-out <- readRDS(file = paste(path, "/Data/Temp/R_objects/04_out.rds", sep=""))
+filtFs <- readRDS(file = file.path(rds_dir, "04_fnFs.filtN.rds"))
+filtRs <- readRDS(file = file.path(rds_dir, "04_fnRs.filtN.rds"))
+out    <- readRDS(file = file.path(rds_dir, "04_out.rds"))
 
-# check that the files in filtFs and filtRs lists exist - I.e. made it through filterAndTrim
-# (sometimes files can have no reads pass and it upsets the next stage)
-exists <- file.exists(filtFs)
+# check that files exist (some may have been dropped)
+exists <- file.exists(filtFs) & file.exists(filtRs)
 
-# run error rates but only on those files that exist
+if (!any(exists)) {
+  stop("No valid filtered files found — check previous step.")
+}
 
-## learn the error rates
-errF <- learnErrors(filtFs[exists], multithread = TRUE, nbases = 2e+08,)
-errR <- learnErrors(filtRs[exists], multithread = TRUE, nbases = 2e+08)
+# run error learning only on valid files
+errF <- learnErrors(filtFs[exists], multithread = TRUE, nbases = 2e8)
+errR <- learnErrors(filtRs[exists], multithread = TRUE, nbases = 2e8)
 
-## write out error rates for use later
-saveRDS(errF, file = paste(path,"/Data/Temp/R_objects/05_errF.rds",sep=""))
-saveRDS(errR, file = paste(path,"/Data/Temp/R_objects/05_errR.rds",sep=""))
+# save error models
+saveRDS(errF, file = file.path(rds_dir, "05_errF.rds"))
+saveRDS(errR, file = file.path(rds_dir, "05_errR.rds"))
 
-# write plot to file for inspection
-pdf(file = paste(path,"/Results/05_error_rate_plots.pdf", sep=""), width = 10, height = 10)
+# write plot to file
+pdf(
+  file = file.path(results_dir, "05_error_rate_plots.pdf"),
+  width = 10,
+  height = 10
+)

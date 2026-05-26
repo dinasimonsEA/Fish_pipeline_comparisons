@@ -27,7 +27,7 @@ ensure_bioc <- function(pkgs) {
 }
 
 ## CRAN packages
-cran_pkgs <- c("Rcpp", "devtools", "ggplot2", "optparse","taxonomizr")
+cran_pkgs <- c("Rcpp", "devtools", "ggplot2", "optparse","taxonomizr", "dplyr")
 ensure_cran(cran_pkgs)
 
 ## Bioconductor packages
@@ -62,26 +62,30 @@ make_manifest <- function(path) {
 
   filenames <- basename(files)
 
-  # Detect direction (R1 / R2) in both formats
+  # Detect direction (R1 / R2 / _1 / _2)
   direction <- ifelse(
-    grepl("(_R1_|\\.R1\\.)", filenames),
+    grepl("(_R1_|\\.R1\\.|_1\\.fastq\\.gz$)", filenames),
     "forward",
     ifelse(
-      grepl("(_R2_|\\.R2\\.)", filenames),
+      grepl("(_R2_|\\.R2\\.|_2\\.fastq\\.gz$)", filenames),
       "reverse",
       NA
     )
   )
 
   if (any(is.na(direction))) {
-    stop("Some files do not contain R1 or R2 identifiers.")
+    stop("Some files do not contain a valid forward/reverse identifier.")
   }
 
-  # Extract sampleID for both naming schemes
+  # Extract sampleID for all naming schemes
   sampleID <- ifelse(
     grepl("_R[12]_", filenames),
-    sub("(_R[12]_.*)$", "", filenames),     # Illumina format
-    sub("(\\.R[12]\\.fastq\\.gz)$", "", filenames)  # Dot format
+    sub("(_R[12]_.*)$", "", filenames),                      # Illumina format
+    ifelse(
+      grepl("\\.R[12]\\.", filenames),
+      sub("(\\.R[12]\\.fastq\\.gz)$", "", filenames),         # Dot format
+      sub("(_[12]\\.fastq\\.gz)$", "", filenames)             # New _1/_2 format
+    )
   )
 
   df <- data.frame(

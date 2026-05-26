@@ -1,23 +1,30 @@
 # Remove N's for DADA2 functionality using filter and trim
 
-#get wd & data location
-path<-getwd()
-test_data_loc <- paste("Data/Raw/RingTrial_Sean")
+# get wd & data location
+path <- getwd()
+
+# Use dataset-specific output directory
+output_dir <- file.path(path, "Data", "Temp", test_data_name)
+
+# Define subdirectories
+filtN_dir <- file.path(output_dir, "01_filtN")
+rds_dir   <- file.path(output_dir, "R_objects")
+
+# Create directories if they don't exist
+dir.create(filtN_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(rds_dir, recursive = TRUE, showWarnings = FALSE)
 
 # group raw files into "forward" reads and "reverse" reads
 fnFs <- sort(manifest$absolute_forward_path)
 fnRs <- sort(manifest$absolute_backward_path)
 
 # set up filepaths for output files
-fnFs.filtN <- file.path(path, "Data/Temp/01_filtN", basename(fnFs)) # Put N-filterd files in filtN/ subdirectory
-fnRs.filtN <- file.path(path, "Data/Temp/01_filtN", basename(fnRs))
+fnFs.filtN <- file.path(filtN_dir, basename(fnFs))
+fnRs.filtN <- file.path(filtN_dir, basename(fnRs))
 
 # run filterAndTrim for all files
-eval(parse(text = paste("filterAndTrim(fnFs, fnFs.filtN, fnRs, fnRs.filtN, maxN = 0, ", ")")))
-
-# ensure r object directory exists
-dir.create(file.path(path, "Data/Temp/R_objects"), recursive = TRUE, showWarnings = FALSE)
+filterAndTrim(fnFs, fnFs.filtN, fnRs, fnRs.filtN, maxN = 0)
 
 # write objects to pass to next script
-saveRDS(fnFs.filtN, file = paste(path,"/Data/Temp/R_objects/01_fnFs.filtN.rds",sep=""))
-saveRDS(fnRs.filtN, file = paste(path,"/Data/Temp/R_objects/01_fnRs.filtN.rds",sep=""))
+saveRDS(fnFs.filtN, file = file.path(rds_dir, "01_fnFs.filtN.rds"))
+saveRDS(fnRs.filtN, file = file.path(rds_dir, "01_fnRs.filtN.rds"))

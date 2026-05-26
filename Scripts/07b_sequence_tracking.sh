@@ -2,10 +2,24 @@
 set -euo pipefail
 shopt -s nullglob
 
-work="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data/Temp/06b_vsearch_denovo_outputs"
-out="${work}/summary.tsv"
+# ==============================
+# CONFIG
+# ==============================
+
+test_data_name="Marchamley"
+
+base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data"
+work="${base}/Temp/${test_data_name}/06b_vsearch_denovo_outputs"
+
+mkdir -p "$work"
+
+out="${work}/07b_vsearch_summary.tsv"
 
 echo -e "sample\tmerged\tfiltered\tderep\tdenoised\tnochim" > "$out"
+
+# ==============================
+# FUNCTIONS
+# ==============================
 
 count_fastq() {
     [ -s "$1" ] && echo $(( $(wc -l < "$1") / 4 )) || echo 0
@@ -25,8 +39,15 @@ count_sizes() {
 
 echo "Building summary..."
 
+# ==============================
+# MAIN LOOP
+# ==============================
+
 for f in "${work}/01_merged/"*_merged.fastq
 do
+    # skip if no files found
+    [ -e "$f" ] || continue
+
     sample=$(basename "$f" _merged.fastq)
 
     merged=$(count_fastq "$f")
@@ -51,7 +72,10 @@ done
 
 echo "Done -> $out"
 
-# print the summary
+# ==============================
+# PRINT SUMMARY
+# ==============================
+
 echo ""
 echo "=== SUMMARY ==="
 column -t "$out"

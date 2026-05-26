@@ -1,21 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
-# merging, dereplicating, and chimera removal using VSEARCH de novo
-# different order to dada2 - 1. merge → 2. filter → 3. dereplicate → 4.denoise → 5.chimera removal
-# need to debug
+# ==============================
+# CONFIG
+# ==============================
 
-# ==============================
-# PATHS
-# ==============================
+test_data_name="Marchamley" # change here to update test data (same name as folder)
 
 base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data"
 
-input_filtered="${base}/Temp/04_filterAndTrim"
-manifest="${base}/Temp/04_filterAndTrim/04_manifest_filtered.csv"
+input_filtered="${base}/Temp/${test_data_name}/04_filterAndTrim"
+manifest="${input_filtered}/04_manifest_filtered.csv"
 
-work="${base}/Temp/06b_vsearch_denovo_outputs"
-results="${base}/Results"
+work="${base}/Temp/${test_data_name}/06b_vsearch_denovo_outputs"
+results="${base}/Results/${test_data_name}"
 
 mkdir -p "$work" "$results"
 
@@ -31,17 +29,28 @@ echo "=== MERGING ==="
 : > "$merge_dir/merged-reads.txt"
 : > "$merge_dir/vsearch.merge.out"
 
-tail -n +2 "$manifest" | while IFS=',' read -r idx sample fwd rev
+
+tail -n +2 "$manifest" | while IFS=',' read -r sample fwd rev
 do
-    sample=$(echo "$sample" | sed 's/"//g')
-    fwd=$(echo "$fwd" | sed 's/"//g')
-    rev=$(echo "$rev" | sed 's/"//g')
+    # remove quotes
+    sample=${sample//\"/}
+    fwd=${fwd//\"/}
+    rev=${rev//\"/}
+
+    echo "Sample: $sample"
+    echo "FWD: $fwd"
+    echo "REV: $rev"
+
+    if [[ ! -f "$fwd" || ! -f "$rev" ]]; then
+        echo "ERROR: Missing input files"
+        continue
+    fi
 
     merged="${sample}_merged.fastq"
 
     vsearch \
-        --fastq_mergepairs "${fwd}" \
-        --reverse "${rev}" \
+        --fastq_mergepairs "$fwd" \
+        --reverse "$rev" \
         --fastqout "${merge_dir}/${merged}" \
         --fastq_allowmergestagger \
         >> "${merge_dir}/vsearch.merge.out" 2>&1
@@ -50,10 +59,7 @@ do
     echo "$sample DONE"
 done
 
-echo "Merging complete."
-echo "--------------------------------------"
-
-# ==============================
+   # ==============================
 # 2. FILTER
 # ==============================
 
@@ -65,10 +71,10 @@ echo "=== FILTERING ==="
 : > "$filter_dir/filtered-reads.txt"
 : > "$filter_dir/filter.out"
 
-while read merged
+while read -r merged
 do
-    base=$(basename "$merged" .fastq)
-    filtered="${base}_filtered.fasta"
+    base_name=$(basename "$merged" .fastq)
+    filtered="${base_name}_filtered.fasta"
 
     vsearch \
         --fastq_filter "${merge_dir}/${merged}" \
@@ -93,10 +99,10 @@ echo "=== DEREPLICATION ==="
 : > "$derep_dir/uniques-reads.txt"
 : > "$derep_dir/uniques.out"
 
-while read filtered
+while read -r filtered
 do
-    base=$(basename "$filtered" .fasta)
-    unique="${base}_uniques.fasta"
+    base_name=$(basename "$filtered" .fasta)
+    unique="${base_name}_uniques.fasta"
 
     vsearch \
         --derep_fulllength "${filter_dir}/${filtered}" \
@@ -121,10 +127,10 @@ echo "=== DENOISING ==="
 : > "$denoise_dir/denoised-reads.txt"
 : > "$denoise_dir/denoised.out"
 
-while read unique
+while read -r unique
 do
-    base=$(basename "$unique" .fasta)
-    denoised="${base}_denoised.fasta"
+    base_name=$(basename "$unique" .fasta)
+    denoised="${base_name}_denoised.fasta"
 
     vsearch \
         --cluster_unoise "${derep_dir}/${unique}" \
@@ -149,20 +155,20 @@ echo "=== CHIMERA REMOVAL ==="
 : > "$nochim_dir/nochim-reads.txt"
 : > "$nochim_dir/nochim.out"
 
-while read denoised
+while read -r denoised
 do
-    base=$(basename "$denoised" .fasta)
-    nochim="${base}_nochim.fasta"
+    base_name=$(basename "$denoised" .fasta)
+    nochim="${base_name}_nochim.fasta"
 
     vsearch \
         --uchime3_denovo "${denoise_dir}/${denoised}" \
         --sizein \
         --nonchimeras "${nochim_dir}/${nochim}" \
-        --uchimeout "${nochim_dir}/${base}_uchime.txt" \
+        --uchimeout "${nochim_dir}/${base_name}_uchime.txt" \
         >> "${nochim_dir}/nochim.out" 2>&1
 
     echo "$nochim" >> "$nochim_dir/nochim-reads.txt"
     echo "$nochim DONE"
 done < "${denoise_dir}/denoised-reads.txt"
 
-echo ="PIPELINE DONE"
+echo "PIPELINE DONE"
