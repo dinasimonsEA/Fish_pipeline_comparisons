@@ -1,45 +1,174 @@
 # script for condensing taxonomy for BLAST outputs using LCA
 # uses taxonomiser
 
-# accession database-----------------------------------------
+# 1. File paths ---------
+path <- getwd()
+processed_dir <- file.path(path, "Data", "Processed", test_data_name)
 
-## more standard options but they don't work in DASH - other code in main notebook
-#options(timeout = 6000)  # increase to ~100 minutes
-#taxonomizr::prepareDatabase('accessionTaxa.sql')
+# 2. Make taxonomy & accession look-up table from metabeat ---------
+## read MetaFishLib database
+mfl_db <- read.csv(
+  file = file.path(path, "Data", "Databases", "Meta-fish-lib", "Riaz", "references.12s.riaz.cleaned.v268.csv"),
+  stringsAsFactors = FALSE
+)
 
-#direct download
-#wget https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz
+## make taxonomy lookup table
+taxonomy_lookup <- mfl_db %>%
+  select(gbAccession, genus, family, order, class, phylum)
 
-#prepareDatabase(
-  #sqlFile = "/Volumes/prd_dash_lab/ea_csg_research_edna_restricted/shared_external_volume/Fish_pipeline_comparison/Databases/accessionTaxa.sql",
-  #accessionTaxaFiles = "/Volumes/prd_dash_lab/ea_csg_research_edna_restricted/shared_external_volume/Fish_pipeline_comparison/Databases/nucl_gb.accession2taxid.gz")
+# 3. Load blast data and tidy ---------
+## DADA2 BLAST output
+BLAST_DADA2_output <- read.table(
+  file = file.path(processed_dir, "08b_ASVs_DADA2_blast_Metafishlib.txt"),
+  sep = "\t",
+  header = FALSE,
+  stringsAsFactors = FALSE
+)
 
-# Getting info ------------------------------------------
-dada2_accessions <- BLAST_DADA2_output$sseqid 
-VSEARCH_accessions <- BLAST_VSEARCH_output$sseqid 
+# clean species column
+BLAST_DADA2_output <- BLAST_DADA2_output %>%
+  mutate(
+    V3 = sub("^[^ ]+ ", "", V3),  # remove accession prefix
+    V3 = gsub("_", " ", V3)       # optional: make names readable
+  )
 
-## get taxonomy for names provided from BLAST
-data2_taxonomy <- getTaxonomy(taxaId,'accessionTaxa.sql')
+# set column names (BLAST outfmt 6)
+colnames(BLAST_DADA2_output) <- c(
+  "qseqid", "sseqid", "species", "pident", "length",
+  "mismatch", "gapopen", "qstart", "qend",
+  "sstart", "send", "evalue", "bitscore"
+)
 
+# join taxonomy lookup
+BLAST_DADA2_output <- BLAST_DADA2_output %>%
+  left_join(taxonomy_lookup, by = c("sseqid" = "gbAccession"))
 
-#taxaId_NCBI<-accessionToTaxa(accessions_NCBI,"accessionTaxa.sql")
-#print("Preview of taxa IDs for NCBI:")
-#print(head(taxaId_NCBI))
+## VSEARCH BLAST output 
+BLAST_VSEARCH_output <- read.table(
+  file = file.path(processed_dir, "08b_ASVs_VSEARCH_blast_Metafishlib.txt"),
+  sep = "\t",
+  header = FALSE,
+  stringsAsFactors = FALSE
+)
 
-### get the taxonomy for those IDs
-taxa_DADA2 <- getTaxonomy(taxaId,'accessionTaxa.sql')
-print("Preview of taxa for DADA2:")
-print(head(taxa_DADA2))
+# clean species column
+BLAST_VSEARCH_output <- BLAST_VSEARCH_output %>%
+  mutate(
+    V3 = sub("^[^ ]+ ", "", V3),  # remove accession prefix
+    V3 = gsub("_", " ", V3)       # optional: make names readable
+  )
 
-## find common names 
-common_DADA2 <- getCommon(taxaId,'accessionTaxa.sql')
-print("Preview of common taxa names for DADA2:")
-print(head(common_DADA2))
+# set column names (BLAST outfmt 6)
+colnames(BLAST_VSEARCH_output) <- c(
+  "qseqid", "sseqid", "species", "pident", "length",
+  "mismatch", "gapopen", "qstart", "qend",
+  "sstart", "send", "evalue", "bitscore"
+)
 
-## Condense multiple taxonomic assignments to their most recent common branch
-taxa_LCA_DADA2 <- condenseTaxa(taxa_DADA2)
+# join taxonomy lookup
+BLAST_VSEARCH_output <- BLAST_VSEARCH_output %>%
+  left_join(taxonomy_lookup, by = c("sseqid" = "gbAccession"))
 
-#taxa_LCA_NCBI <- condenseTaxa(common_NCBI)
+# 4. Filter ---------
+BLAST_DADA2_output <- BLAST_DADA2_output %>%
+  filter(pident >= min_pident) %>%
+  filter(length >= min_length) %>%
+  group_by(qseqid) %>%
+  mutate(max_bitscore = max(bitscore)) %>%
+  filter(bitscore >= (top_frac * max_bitscore)) %>%
+  ungroup()
 
-# join all taxonomy data
+BLAST_VSEARCH_output <- BLAST_VSEARCH_output %>%
+  filter(pident >= min_pident) %>%
+  filter(length >= min_length) %>%
+  group_by(qseqid) %>%
+  mutate(max_bitscore = max(bitscore)) %>%
+  filter(bitscore >= (top_frac * max_bitscore)) %>%
+  ungroup()
 
+# 5. Get taxonomy matrix
+## dada2
+dada2_taxa <- BLAST_DADA2_output %>%
+select(c(species, genus, family, order, class, phylum))
+
+colnames(dada2_taxa) <- c("Species", "Genus", "Family", "Order", "Class", "Phylum")
+
+dada2_taxa_matrix <- as.matrix(dada2_taxa)
+head(dada2_taxa_matrix)
+
+## VSEARCH
+VSEARCH_taxa <- BLAST_VSEARCH_output %>%
+select(c(species, genus, family, order, class, phylum))
+colnames(VSEARCH_taxa) <- c("Species", "Genus", "Family", "Order", "Class", "Phylum")
+
+VSEARCH_taxa_matrix <- as.matrix(VSEARCH_taxa)
+head(VSEARCH_taxa_matrix)
+
+# 6. Run LCA
+## dada2
+combined_data_dada2 <- cbind(ASV_ID = BLAST_DADA2_output$qseqid, as.data.frame(dada2_taxa))
+
+lca_results_dada2 <- combined_data_dada2 %>%
+  group_by(ASV_ID) %>%
+  do({
+    # Use distinct() here to save massive amounts of time/temp space
+    sub_matrix <- .[, -1] %>% distinct() %>% as.matrix()
+    lca <- condenseTaxa(sub_matrix)
+    as.data.frame(lca)
+  })
+
+## VSEARCH
+combined_data_VSEARCH <- cbind(ASV_ID = BLAST_VSEARCH_output$qseqid, as.data.frame(VSEARCH_taxa))
+
+lca_results_VSEARCH <- combined_data_VSEARCH %>%
+  group_by(ASV_ID) %>%
+  do({
+    # Use distinct() here to save massive amounts of time/temp space
+    sub_matrix <- .[, -1] %>% distinct() %>% as.matrix()
+    lca <- taxonomizr::condenseTaxa(sub_matrix)
+    as.data.frame(lca)
+  })
+
+# 7. Final formatting
+## dada2
+lca_results_dada2[lca_results_dada2 == "NA"] <- NA
+
+lca_results_dada2 <- lca_results_dada2 %>%
+  ungroup() %>%
+  mutate(
+    lca_rank = apply(.[, -1], 1, function(x) {
+      idx <- which(!is.na(x))
+      if (length(idx) > 0) colnames(dada2_taxa_matrix)[max(idx)] else NA
+    }),
+    lca_name = apply(.[, -1], 1, function(x) {
+      idx <- which(!is.na(x))
+      if (length(idx) > 0) x[max(idx)] else NA
+    })
+  ) %>%
+  select(ASV_ID, everything(), lca_rank, lca_name)
+
+## VSEARCH
+lca_results_VSEARCH[lca_results_VSEARCH == "NA"] <- NA
+
+lca_results_VSEARCH <- lca_results_VSEARCH %>%
+  ungroup() %>%
+  mutate(
+    lca_rank = apply(.[, -1], 1, function(x) {
+      idx <- which(!is.na(x))
+      if (length(idx) > 0) colnames(VSEARCH_taxa_matrix)[max(idx)] else NA
+    }),
+    lca_name = apply(.[, -1], 1, function(x) {
+      idx <- which(!is.na(x))
+      if (length(idx) > 0) x[max(idx)] else NA
+    })
+  ) %>%
+  select(ASV_ID, everything(), lca_rank, lca_name)
+
+# 7. Save Outputs
+## dada2
+out_file_dada2 <- paste0(processed_dir, "/DADA2_ASV_LCA_results_", min_pident, "_", min_length, "_top_", top_frac, "%.tsv")
+write.table(lca_results_dada2, file = out_file_dada2, sep = "\t", quote = FALSE, row.names = FALSE)
+
+## VSEARCH
+out_file_VSEARCH <- paste0(processed_dir, "/VSEARCH_ASV_LCA_results_", min_pident, "_", min_length, "_top_", top_frac, "%.tsv")
+write.table(lca_results_VSEARCH, file = out_file_VSEARCH, sep = "\t", quote = FALSE, row.names = FALSE)
