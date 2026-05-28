@@ -5,16 +5,16 @@ set -euo pipefail
 # CONFIG
 # ==============================
 
-test_data_name="Marchamley"
+test_data_name="Windermere_2017"
 
 base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data"
 
 processed_dir="${base}/Processed/${test_data_name}"
-db_src="${base}/Databases/12S_fish_db"
+db_src="${base}/Databases/12S_riaz_fish_db"
 
 # BLAST temp directory (local disk)
 db_tmp="/tmp/blastdb"
-db_name="12S_fish_db"
+db_name="12S_riaz_fish_db"
 
 # input/output files
 query="${processed_dir}/06_ASV_seqs_DADA2.fasta"

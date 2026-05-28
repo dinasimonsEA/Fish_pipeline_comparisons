@@ -18,8 +18,8 @@ seqtab.nochim <- readRDS(file = file.path(rds_dir, "06_seqtab.nochim.rds"))
 # database path
 database <- file.path(
   path,
-  "Data", "Databases", "Meta-fish-lib",
-  "references.12s.miya.dada.taxonomy.v268.fasta"
+  "Data", "Databases", "Meta-fish-lib", "Riaz",
+  "references.12s.riaz.dada.taxonomy.v268.fasta"
 )
 
 # assign taxonomy
