@@ -3,6 +3,9 @@
 # get wd & data location
 path<-getwd()
 
+# define executable file location
+cutadapt_loc <-"/usr/bin/cutadapt"
+
 # Dataset-specific directories
 output_dir <- file.path(path, "Data", "Temp", test_data_name)
 filt_dir   <- file.path(output_dir, "01_filtN")
@@ -119,7 +122,7 @@ all_args <- c("-m", minimum, "-n", copies)
 # run cutadapt loop
 for (i in seq_along(fnFs.filtN)) {
   system2(
-    cutadapt_loc, # this is the executable file location for cutadapt, defined in notebook as location is temp and changes on each session
+    cutadapt_loc, # this is the executable file location for cutadapt
     args = c(
       R1.flags,
       R2.flags,
