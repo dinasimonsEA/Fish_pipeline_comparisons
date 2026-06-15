@@ -27,7 +27,7 @@ ensure_bioc <- function(pkgs) {
 }
 
 ## CRAN packages
-cran_pkgs <- c("Rcpp", "devtools", "ggplot2", "optparse","taxonomizr", "dplyr")
+cran_pkgs <- c("Rcpp", "devtools", "ggplot2", "optparse","taxonomizr", "dplyr", "seqinr")
 ensure_cran(cran_pkgs)
 
 ## Bioconductor packages
