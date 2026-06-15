@@ -15,12 +15,18 @@ dir.create(processed_dir, recursive = TRUE, showWarnings = FALSE)
 # read in the R object
 seqtab.nochim <- readRDS(file = file.path(rds_dir, "06_seqtab.nochim.rds"))
 
-# database path
-database <- file.path(
-  path,
-  "Data", "Databases", "Meta-fish-lib", "Riaz",
-  "references.12s.riaz.dada.taxonomy.v268.fasta"
+# read and format in METAbeat
+seqtab.metabeat <- read.fasta(
+  file = file.path(processed_dir, paste0("06_ASV_seqs_MetaBEAT.fasta"))
 )
+
+seqs_metabeat <- sapply(seqtab.metabeat, function(x) {
+  paste(x, collapse = "")
+})
+seqs_metabeat <- toupper(seqs_metabeat)
+
+# database path
+database <- file.path(path, "Data", "Databases", "EA_custom", "EA_fish_database.riaz.AssignTaxonomy.fasta")
 
 # assign taxonomy
 taxa <- assignTaxonomy(
@@ -31,8 +37,17 @@ taxa <- assignTaxonomy(
   multithread = TRUE
 )
 
+# assign taxonomy
+taxa_metabeat <- assignTaxonomy(
+  seqs_metabeat,
+  database,
+  tryRC = TRUE,
+  verbose = TRUE,
+  multithread = TRUE
+)
+
 # database name (used in filenames)
-db_name <- "Meta-fish-lib"
+db_name <- "EA_fish_riaz"
 
 # write taxonomy table
 write.table(
@@ -42,5 +57,14 @@ write.table(
   quote = FALSE
 )
 
+# write taxonomy table
+write.table(
+  taxa_metabeat,
+  file = file.path(processed_dir, paste0("08_assigned_taxonomy_MetaBEAT_", db_name, ".csv")),
+  sep = ",",
+  quote = FALSE
+)
+
 # save R object
 saveRDS(taxa, file = file.path(rds_dir, "08_taxa.rds"))
+saveRDS(taxa_metabeat, file = file.path(rds_dir, "08_taxa_metabeat.rds"))

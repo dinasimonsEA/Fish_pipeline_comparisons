@@ -12,7 +12,7 @@ base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_compa
 input_filtered="${base}/Temp/${test_data_name}/04_filterAndTrim"
 manifest="${input_filtered}/04_manifest_filtered.csv"
 
-work="${base}/Temp/${test_data_name}/06b_vsearch_denovo_outputs"
+work="${base}/Temp/${test_data_name}/06_vsearch_denovo_outputs"
 results="${base}/Results/${test_data_name}"
 
 mkdir -p "$work" "$results"

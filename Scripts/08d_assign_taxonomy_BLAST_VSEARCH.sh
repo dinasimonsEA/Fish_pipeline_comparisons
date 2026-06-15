@@ -7,20 +7,21 @@ set -euo pipefail
 # CONFIG
 # ==============================
 
-test_data_name="Windermere_2017"
+test_data_name="RingTrial_Sean"
 
 base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data"
 
 processed_dir="${base}/Processed/${test_data_name}"
-db_src="${base}/Databases/12S_riaz_fish_db"
+db_src="${base}/Databases/EA_custom/EA_fish_riaz_db"
 
+# BLAST temp directory (local disk)
 db_tmp="/tmp/blastdb"
-db_name="12S_riaz_fish_db"
+db_name="EA_fish_riaz_db"
 
-# input/output
-query="${processed_dir}/06b_ASV_seqs_VSEARCH.fasta"
-output_MFL="${processed_dir}/08b_ASVs_VSEARCH_blast_Metafishlib.txt"
-output_NCBI="${processed_dir}/08b_ASVs_VSEARCH_blast_NCBI.txt"
+# input/output files
+query="${processed_dir}/06_ASV_seqs_VSEARCH.fasta"
+output_MFL="${processed_dir}/08_ASVs_VSEARCH_blast_EA_riaz.txt"
+#output_NCBI="${processed_dir}/08_ASVs_VSEARCH_blast_NCBI.txt"
 
 # ==============================
 # CHECKS
@@ -40,7 +41,7 @@ fi
 # COPY DATABASE TO LOCAL DISK
 # ==============================
 
-echo "Copying BLAST database..."
+echo "Copying BLAST database to local disk..."
 
 mkdir -p "$db_tmp"
 cp "${db_src}/${db_name}."* "$db_tmp/"
@@ -55,7 +56,7 @@ fi
 # RUN BLAST (Meta Fish Lib)
 # ==============================
 
-echo "Running BLAST (VSEARCH ASVs)..."
+echo "Running BLAST..."
 
 blastn \
     -query "$query" \
@@ -94,6 +95,6 @@ echo "BLAST complete -> $output_MFL"
 # ==============================
 
 # awk '($3 > 97)' "$output_MFL" \
-# > "${processed_dir}/08b_ASVs_VSEARCH_blast_Metafishlib_97.txt"
+# > "${processed_dir}/08_ASVs_VSEARCH_blast_Metafishlib_97.txt"
 
 echo "DONE"

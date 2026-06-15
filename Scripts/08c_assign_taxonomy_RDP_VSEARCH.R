@@ -16,11 +16,7 @@ dir.create(processed_dir, recursive = TRUE, showWarnings = FALSE)
 seqtab.nochim <- readRDS(file = file.path(rds_dir, "06_seqtab_VSEARCH.rds"))
 
 # database path
-database <- file.path(
-  path,
-  "Data", "Databases", "Meta-fish-lib", "Riaz",
-  "references.12s.riaz.dada.taxonomy.v268.fasta"
-)
+database <- file.path(path, "Data", "Databases", "EA_custom", "EA_fish_database.riaz.AssignTaxonomy.fasta")
 
 # check database exists
 if (!file.exists(database)) {
@@ -37,15 +33,15 @@ taxa <- assignTaxonomy(
 )
 
 # database name (used in filenames)
-db_name <- "Meta-fish-lib"
+db_name <- "EA_fish_riaz"
 
-# write taxonomy table
+# write taxonomy table  
 write.table(
   taxa,
-  file = file.path(processed_dir, paste0("08c_assigned_taxonomy_VSEARCH_", db_name, ".csv")),
+  file = file.path(processed_dir, paste0("08_assigned_taxonomy_VSEARCH_", db_name, ".csv")),
   sep = ",",
   quote = FALSE
 )
 
 # save R object
-saveRDS(taxa, file = file.path(rds_dir, "08c_taxa_VSEARCH.rds"))
+saveRDS(taxa, file = file.path(rds_dir, "08_taxa_VSEARCH.rds"))
