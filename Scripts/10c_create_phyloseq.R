@@ -4,29 +4,13 @@
 # create tax_table()
 
 # =========================
-# STEP 1: MERGE TAXONOMY
+# STEP 1: STRIP ALL Rle STRUCTURES
 # =========================
 
-taxa_clean <- master_long_worms_df %>%
-  mutate(
-    kingdom = if_else(!is.na(AphiaID_worms), kingdom_worms, kingdom),
-    phylum  = if_else(!is.na(AphiaID_worms), phylum_worms, phylum),
-    class   = if_else(!is.na(AphiaID_worms), class_worms, class),
-    order   = if_else(!is.na(AphiaID_worms), order_worms, order),
-    family  = if_else(!is.na(AphiaID_worms), family_worms, family),
-    genus   = if_else(!is.na(AphiaID_worms), genus_worms, genus),
-    species = if_else(!is.na(AphiaID_worms), species_worms, species),
-    aphiaid = AphiaID_worms
-  )
-
-# =========================
-# STEP 2: STRIP ALL Rle STRUCTURES (CRITICAL)
-# =========================
-
-taxa <- taxa_clean %>%
+taxa <- master_long_worms_df %>%
   select(
-    aphiaid,
-    taxa_name_clean,
+    AphiaID_worms,
+    taxa_name_final,
     kingdom,
     phylum,
     class,
@@ -47,56 +31,56 @@ taxa <- as.data.frame(lapply(taxa, function(x) {
   }
 }), stringsAsFactors = FALSE)
 
-# convert back to tibble
-taxa <- as_tibble(taxa)
+# convert back to df
+taxa <- as.data.frame(taxa)
 
 # =========================
-# STEP 3: PRIORITY LOGIC
+# STEP 2: PRIORITY LOGIC
 # =========================
 
 taxa <- taxa %>%
   mutate(
     priority = case_when(
-      !is.na(aphiaid) & !is.na(kingdom) ~ 3,
+      !is.na(AphiaID_worms) & !is.na(kingdom) ~ 3,
       !is.na(kingdom) ~ 2,
       TRUE ~ 1
     )
   )
 
 # =========================
-# STEP 4: REMOVE DUPLICATES (SAFE)
+# STEP 3: REMOVE DUPLICATES (SAFE)
 # =========================
 
 taxa <- taxa %>%
-  group_by(taxa_name_clean) %>%
+  group_by(taxa_name_final) %>%
   arrange(desc(priority), .by_group = TRUE) %>%
   slice_head(n = 1) %>%   # safer than slice(1)
   ungroup() %>%
   select(-priority)
 
 # =========================
-# STEP 5: FINAL CLEANUP
+# STEP 4: FINAL CLEANUP
 # =========================
 
 taxa <- taxa %>%
   distinct() %>%
-  as_tibble()
+  as.data.frame()
 
 rownames(taxa) <- NULL
 
 # =========================
-# STEP 6: SORT FOR PHYLOSEQ
+# STEP 5: SORT FOR PHYLOSEQ
 # =========================
 
-taxa$taxa_name_clean <- as.factor(taxa$taxa_name_clean)
-taxa <- taxa[order(taxa$taxa_name_clean), ]
+taxa$taxa_name_final <- as.factor(taxa$taxa_name_final)
+taxa <- taxa[order(taxa$taxa_name_final), ]
 
 # =========================
-# STEP 7: TAX MATRIX
+# STEP 6: TAX MATRIX
 # =========================
 
 tax_matrix <- taxa %>%
-  column_to_rownames("taxa_name_clean") %>%
+  column_to_rownames("taxa_name_final") %>%
   as.matrix()
 
 # =========================
@@ -107,15 +91,15 @@ cat("Duplicate taxa:", any(duplicated(rownames(tax_matrix))), "\n")
 cat("Missing kingdom:", sum(is.na(taxa$kingdom)), "\n")
 
 # turn into phyloseq format
-taxa$taxa_name_clean <- as.factor(taxa$taxa_name_clean)
-taxa <- taxa[order(taxa$taxa_name_clean),] #order alphabetically to match other ps elements
+taxa$taxa_name_final <- as.factor(taxa$taxa_name_final)
+taxa <- taxa[order(taxa$taxa_name_final),] #order alphabetically to match other ps elements
 rownames(taxa) <- NULL # reset row names
-rownames(taxa) <-taxa$taxa_name_clean
+rownames(taxa) <-taxa$taxa_name_final
 taxa <- as.matrix(taxa)
 
 #-------------------------------------------------------------------------------
 # create sample_data()
-meta <- unique(subset(master_long_df, select = c("sampleid",
+meta <- unique(subset(master_long_worms_df, select = c("sampleid",
                                              "denoise_method",
                                              "taxonomy_method",
                                              "dataset",
@@ -127,7 +111,7 @@ rownames(meta) <-meta$fullID
 
 #-------------------------------------------------------------------------------
 # Create otu_table
-species_reads_long <- master_long_df %>%
+species_reads_long <- master_long_worms_df %>%
   select(asv, reads, fullID) %>%
   mutate(across(c(asv, fullID), as.factor)) %>%
   distinct()
@@ -150,13 +134,13 @@ print(dim(species_reads_wide))
 
 #-------------------------------------------------------------------------------
 # create otu_table (taxa level) 
-species_reads_long_taxa <- master_long_df %>%
-  select(asv, taxa_name_clean, reads, fullID) %>%
-  mutate(across(c(asv, taxa_name_clean, fullID), as.factor)) %>%
+species_reads_long_taxa <- master_long_worms_df %>%
+  select(asv, taxa_name_final, reads, fullID) %>%
+  mutate(across(c(asv, taxa_name_final, fullID), as.factor)) %>%
   distinct()
 
 species_reads_long_taxa_grouped <- species_reads_long_taxa %>% 
-  group_by(taxa_name_clean, fullID) %>% 
+  group_by(taxa_name_final, fullID) %>% 
   summarize(reads = sum(reads, na.rm = TRUE), .groups = "drop")
 
 species_reads_wide_taxa <- species_reads_long_taxa_grouped %>% 
@@ -166,12 +150,12 @@ species_reads_wide_taxa <- species_reads_long_taxa_grouped %>%
   as.data.frame()
 
 #order names alphabetically
-species_reads_wide_taxa<- species_reads_wide_taxa[order(species_reads_wide_taxa$taxa_name_clean),] #order rows alphabetically
+species_reads_wide_taxa<- species_reads_wide_taxa[order(species_reads_wide_taxa$taxa_name_final),] #order rows alphabetically
 species_reads_wide_taxa <- species_reads_wide_taxa[,order(colnames(species_reads_wide_taxa))] #order cols alphabetically
 
 #update row names to ASVs
 rownames(species_reads_wide_taxa) <- NULL
-species_reads_wide_taxa <- species_reads_wide_taxa %>% column_to_rownames(var="taxa_name_clean")
+species_reads_wide_taxa <- species_reads_wide_taxa %>% column_to_rownames(var="taxa_name_final")
 
 dim(species_reads_wide_taxa)
 
