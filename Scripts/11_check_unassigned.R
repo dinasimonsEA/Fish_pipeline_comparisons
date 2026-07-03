@@ -21,41 +21,55 @@ for (level in tax_levels) {
   # -------------------------------
   # FLAG UNASSIGNED
   # -------------------------------
-  master_long_df$unassigned <- grepl(
+  input_data$unassigned <- grepl(
     paste(unassigned_phrases, collapse = "|"),
-    master_long_df[[level]],
+    input_data[[level]],
     ignore.case = TRUE
-  ) | is.na(master_long_df[[level]])
+  ) | is.na(input_data[[level]])
 
   # -------------------------------
-  # 1. ROW LEVEL
+  # ASV normalised by reads
   # -------------------------------
-  row_summary <- aggregate(
-    unassigned ~ denoise_method + taxonomy_method + dataset,
-    data = master_long_df,
-    FUN = function(x) c(
-      total = length(x),
-      unassigned = sum(x)
-    )
+  
+read_summary <- aggregate(
+    reads ~ denoise_method + taxonomy_method + dataset,
+    data = input_data,
+    FUN = sum
   )
 
-  row_df <- data.frame(
+  unassigned_reads <- aggregate(
+    reads ~ denoise_method + taxonomy_method + dataset,
+    data = subset(input_data, unassigned),
+    FUN = sum
+  )
+
+  read_df <- merge(
+    read_summary,
+    unassigned_reads,
+    by = c("denoise_method", "taxonomy_method", "dataset"),
+    all.x = TRUE,
+    suffixes = c("_total", "_unassigned")
+  )
+
+  #read_df$unassigned[is.na(read_df$unassigned)] <- 0
+
+  read_df <- data.frame(
     level = level,
-    metric = "row",
-    denoise_method = row_summary$denoise_method,
-    taxonomy_method = row_summary$taxonomy_method,
-    dataset = row_summary$dataset,
-    total = row_summary$unassigned[, "total"],
-    unassigned = row_summary$unassigned[, "unassigned"]
+    metric = "Reads",
+    denoise_method = read_df$denoise_method,
+    taxonomy_method = read_df$taxonomy_method,
+    dataset = read_df$dataset,
+    total = read_df$reads_total,
+    unassigned = read_df$reads_unassigned
   )
 
-  row_df$percent_unassigned <- round(100 * row_df$unassigned / row_df$total, 2)
+  read_df$percent_unassigned <- round(100 * read_df$unassigned / read_df$total, 2)
 
   # -------------------------------
-  # 2. ASV LEVEL
+  # ASV LEVEL
   # -------------------------------
   asv_unique <- unique(
-    master_long_df[, c("asv","denoise_method","taxonomy_method","dataset","unassigned")]
+    input_data[, c("asv","denoise_method","taxonomy_method","dataset","unassigned")]
   )
 
   asv_summary <- aggregate(
@@ -80,10 +94,10 @@ for (level in tax_levels) {
   asv_df$percent_unassigned <- round(100 * asv_df$unassigned / asv_df$total, 2)
 
   # -------------------------------
-  # 3. TAXA LEVEL
+  # TAXA LEVEL
   # -------------------------------
   taxa_unique <- unique(
-    master_long_df[, c(level,"denoise_method","taxonomy_method","dataset","unassigned")]
+    input_data[, c(level,"denoise_method","taxonomy_method","dataset","unassigned")]
   )
 
   taxa_summary <- aggregate(
@@ -110,17 +124,10 @@ for (level in tax_levels) {
   # -------------------------------
   # COMBINE
   # -------------------------------
-  summary_list[[level]] <- rbind(row_df, asv_df, taxa_df)
+  summary_list[[level]] <- rbind(read_df, asv_df, taxa_df)
 }
 
 # -------------------------------
 # FINAL TABLE
 # -------------------------------
 unassigned_summary_table <- do.call(rbind, summary_list)
-
-# -------------------------------
-# EXPORT
-# -------------------------------
-write.csv(unassigned_summary_table, "Results/unassigned_summary_table.csv", row.names = FALSE)
-
-cat("\nSummary table created and saved as 'unassigned_summary_table.csv'\n")
