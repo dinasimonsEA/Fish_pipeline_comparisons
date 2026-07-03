@@ -14,7 +14,7 @@ mfl_db <- read.csv(
 
 ## make taxonomy lookup table
 taxonomy_lookup <- mfl_db %>%
-  select(gbAccession, genus, family, order, class, phylum)
+  select(gbAccession, genus, family, order, class, phylum, kingdom)
 
 # 3. Load blast data and tidy ---------
 ## DADA2 BLAST output
@@ -112,7 +112,7 @@ BLAST_VSEARCH_output <- BLAST_VSEARCH_output %>%
   filter(bitscore >= (top_frac * max_bitscore)) %>%
   ungroup()
 
-  BLAST_MetaBEAT_output <- BLAST_MetaBEAT_output %>%
+BLAST_MetaBEAT_output <- BLAST_MetaBEAT_output %>%
   filter(pident >= min_pident) %>%
   filter(length >= min_length) %>%
   group_by(qseqid) %>%
@@ -123,25 +123,51 @@ BLAST_VSEARCH_output <- BLAST_VSEARCH_output %>%
 # 5. Get taxonomy matrix
 ## dada2
 dada2_taxa <- BLAST_DADA2_output %>%
-select(c(species, genus, family, order, class, phylum))
-
-colnames(dada2_taxa) <- c("Species", "Genus", "Family", "Order", "Class", "Phylum")
+select(c(kingdom, phylum, class, order, family, genus, species))
+colnames(dada2_taxa) <- 
+ c(
+  "Kingdom",
+  "Phylum",
+  "Class",
+  "Order",
+  "Family",
+  "Genus",
+  "Species"
+)
 
 dada2_taxa_matrix <- as.matrix(dada2_taxa)
 head(dada2_taxa_matrix)
 
 ## VSEARCH
 VSEARCH_taxa <- BLAST_VSEARCH_output %>%
-select(c(species, genus, family, order, class, phylum))
-colnames(VSEARCH_taxa) <- c("Species", "Genus", "Family", "Order", "Class", "Phylum")
+select(c(kingdom, phylum, class, order, family, genus, species))
+colnames(VSEARCH_taxa) <- 
+ c(
+  "Kingdom",
+  "Phylum",
+  "Class",
+  "Order",
+  "Family",
+  "Genus",
+  "Species"
+)
 
 VSEARCH_taxa_matrix <- as.matrix(VSEARCH_taxa)
 head(VSEARCH_taxa_matrix)
 
 ## MetaBEAT
 MetaBEAT_taxa <- BLAST_MetaBEAT_output %>%
-select(c(species, genus, family, order, class, phylum))
-colnames(MetaBEAT_taxa) <- c("Species", "Genus", "Family", "Order", "Class", "Phylum")
+select(c(kingdom, phylum, class, order, family, genus, species))
+colnames(MetaBEAT_taxa) <- 
+ c(
+  "Kingdom",
+  "Phylum",
+  "Class",
+  "Order",
+  "Family",
+  "Genus",
+  "Species"
+)
 
 MetaBEAT_taxa_matrix <- as.matrix(MetaBEAT_taxa)
 head(MetaBEAT_taxa_matrix)
@@ -155,7 +181,7 @@ lca_results_dada2 <- combined_data_dada2 %>%
   do({
     # Use distinct() here to save massive amounts of time/temp space
     sub_matrix <- .[, -1] %>% distinct() %>% as.matrix()
-    lca <- condenseTaxa(sub_matrix)
+    lca <- taxonomizr::condenseTaxa(sub_matrix)
     as.data.frame(lca)
   })
 
@@ -177,12 +203,11 @@ combined_data_MetaBEAT <- cbind(ASV_ID = BLAST_MetaBEAT_output$qseqid, as.data.f
 lca_results_MetaBEAT <- combined_data_MetaBEAT %>%
   group_by(ASV_ID) %>%
   do({
-    # Use distinct() here to save massive amounts of time/temp space
+    #Use distinct() here to save massive amounts of time/temp space
     sub_matrix <- .[, -1] %>% distinct() %>% as.matrix()
     lca <- taxonomizr::condenseTaxa(sub_matrix)
     as.data.frame(lca)
   })
-
 
 # 7. Final formatting
 ## dada2
@@ -192,11 +217,11 @@ lca_results_dada2 <- lca_results_dada2 %>%
   ungroup() %>%
   mutate(
     lca_rank = apply(.[, -1], 1, function(x) {
-      idx <- which(!is.na(x))
-      if (length(idx) > 0) colnames(dada2_taxa_matrix)[max(idx)] else NA
+      idx <- which(!is.na(x) & x != "")
+      if (length(idx) > 0) colnames(lca_results_dada2)[-1][max(idx)] else NA
     }),
     lca_name = apply(.[, -1], 1, function(x) {
-      idx <- which(!is.na(x))
+      idx <- which(!is.na(x) & x != "")
       if (length(idx) > 0) x[max(idx)] else NA
     })
   ) %>%
@@ -209,11 +234,11 @@ lca_results_VSEARCH <- lca_results_VSEARCH %>%
   ungroup() %>%
   mutate(
     lca_rank = apply(.[, -1], 1, function(x) {
-      idx <- which(!is.na(x))
-      if (length(idx) > 0) colnames(VSEARCH_taxa_matrix)[max(idx)] else NA
+      idx <- which(!is.na(x) & x != "")
+      if (length(idx) > 0) colnames(lca_results_VSEARCH)[-1][max(idx)] else NA
     }),
     lca_name = apply(.[, -1], 1, function(x) {
-      idx <- which(!is.na(x))
+      idx <- which(!is.na(x) & x != "")
       if (length(idx) > 0) x[max(idx)] else NA
     })
   ) %>%
@@ -226,11 +251,11 @@ lca_results_MetaBEAT <- lca_results_MetaBEAT %>%
   ungroup() %>%
   mutate(
     lca_rank = apply(.[, -1], 1, function(x) {
-      idx <- which(!is.na(x))
-      if (length(idx) > 0) colnames(MetaBEAT_taxa_matrix)[max(idx)] else NA
+      idx <- which(!is.na(x) & x != "")
+      if (length(idx) > 0) colnames(lca_results_MetaBEAT)[-1][max(idx)] else NA
     }),
     lca_name = apply(.[, -1], 1, function(x) {
-      idx <- which(!is.na(x))
+      idx <- which(!is.na(x) & x != "")
       if (length(idx) > 0) x[max(idx)] else NA
     })
   ) %>%
