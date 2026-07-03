@@ -46,6 +46,10 @@ for ds in datasets:
         f"{base_path}/06_ASV_seqs_MetaBEAT.fasta"
     )
 
+    output_lookup = (
+    f"{base_path}/06_OTU_lookup_MetaBEAT.tsv"
+    )
+
     # =====================================================
     # CHECK FILES EXIST
     # =====================================================
@@ -65,10 +69,9 @@ for ds in datasets:
     # =====================================================
 
     raw_to_sequence = OrderedDict()
-
     otu_to_sequence = OrderedDict()
-
     sequence_to_otu = OrderedDict()
+    raw_to_new_otu = OrderedDict()
 
     otu_counter = 1
 
@@ -108,6 +111,7 @@ for ds in datasets:
 
                             otu_counter += 1
 
+                        raw_to_new_otu[current_header] = otu_id
                         raw_to_sequence[current_header] = sequence
 
                     # Start new record
@@ -137,7 +141,30 @@ for ds in datasets:
                     sequence_to_otu[sequence] = otu_id
                     otu_to_sequence[otu_id] = sequence
 
+                raw_to_new_otu[current_header] = otu_id
                 raw_to_sequence[current_header] = sequence
+
+            # save look-up table
+            try:
+
+                lookup_df = pd.DataFrame({
+                    "Original_OTU": list(raw_to_new_otu.keys()),
+                    "New_OTU": list(raw_to_new_otu.values())
+                })
+
+                lookup_df.to_csv(
+                    output_lookup,
+                    sep="\t",
+                    index=False
+                )
+
+                print("\nLookup table written:")
+                print(output_lookup)
+
+            except Exception as e:
+
+                print("\nERROR writing lookup table:")
+                print(e)
 
         print(f"\nUnique OTUs: {len(otu_to_sequence)}")
 
