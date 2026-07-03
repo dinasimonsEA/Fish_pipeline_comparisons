@@ -29,16 +29,30 @@ taxa <- assignTaxonomy(
   database,
   tryRC = TRUE,
   verbose = TRUE,
-  multithread = TRUE
+  multithread = TRUE,
+  minBoot = 90,
+  outputBootstraps = TRUE
 )
+
+boot_vsearch<-taxa[["boot"]]
+taxa_vsearch<-taxa[["tax"]]
+taxa_vsearch_print <- taxa_vsearch
+rownames(taxa_vsearch_print) <- NULL
 
 # database name (used in filenames)
 db_name <- "EA_fish_riaz"
 
 # write taxonomy table  
 write.table(
-  taxa,
+  taxa_vsearch,
   file = file.path(processed_dir, paste0("08_assigned_taxonomy_VSEARCH_", db_name, ".csv")),
+  sep = ",",
+  quote = FALSE
+)
+
+write.table(
+  boot_vsearch,
+  file = file.path(processed_dir, paste0("08_bootstraps_vsearch_", db_name, ".csv")),
   sep = ",",
   quote = FALSE
 )

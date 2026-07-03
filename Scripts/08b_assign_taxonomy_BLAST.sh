@@ -7,7 +7,7 @@ set -euo pipefail
 # CONFIG
 # ==============================
 
-test_data_name="RingTrial_Sean"
+test_data_name="$1"
 
 base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data"
 
@@ -53,7 +53,7 @@ if [[ ! -f "${db_tmp}/${db_name}.nhr" ]]; then
 fi
 
 # ==============================
-# RUN BLAST (Meta Fish Lib)
+# RUN BLAST (custom reference db)
 # ==============================
 
 echo "Running BLAST..."
@@ -64,13 +64,14 @@ blastn \
     -db "${db_tmp}/${db_name}" \
     -evalue 10 \
     -outfmt "6 qseqid saccver stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore" \
-    -perc_identity 97 \
+    -perc_identity 95 \
     -out "$output_MFL"
 
 echo "BLAST complete -> $output_MFL"
 
 # ==============================
-# OPTIONAL: NCBI REMOTE BLAST
+# OPTIONAL: NCBI REMOTE BLAST db
+# currently timing out, not using 
 # ==============================
 
 # split query into chunks to avoid timeout

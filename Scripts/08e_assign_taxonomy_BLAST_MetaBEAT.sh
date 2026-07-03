@@ -7,7 +7,7 @@ set -euo pipefail
 # CONFIG
 # ==============================
 
-test_data_name="Windermere_2017"
+test_data_name="$1"
 
 base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data"
 
@@ -63,7 +63,7 @@ blastn \
     -db "${db_tmp}/${db_name}" \
     -evalue 10 \
     -outfmt "6 qseqid saccver stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore" \
-    -perc_identity 97 \
+    -perc_identity 95 \
     -out "$output_MFL"
 
 echo "BLAST complete -> $output_MFL"
