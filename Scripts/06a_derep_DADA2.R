@@ -39,8 +39,8 @@ names(derepFs) <- sample.names[exists]
 names(derepRs) <- sample.names[exists]
 
 # perform DADA2 sample inference
-dadaFs <- dada(derepFs, err = errF, multithread = TRUE)
-dadaRs <- dada(derepRs, err = errR, multithread = TRUE)
+dadaFs <- dada(derepFs, err = errF, multithread = TRUE, pool = "pseudo")
+dadaRs <- dada(derepRs, err = errR, multithread = TRUE, pool = "pseudo")
 
 # merge paired reads
 mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE)

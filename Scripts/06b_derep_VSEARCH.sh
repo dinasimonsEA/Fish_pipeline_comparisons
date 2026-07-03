@@ -5,7 +5,7 @@ set -euo pipefail
 # CONFIG
 # ==============================
 
-test_data_name="Marchamley" # change here to update test data (same name as folder)
+test_data_name="$1"
 
 base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data"
 
@@ -137,7 +137,10 @@ do
         --sizein \
         --sizeout \
         --centroids "${denoise_dir}/${denoised}" \
+        --clusterout_sort \
         >> "${denoise_dir}/denoised.out" 2>&1
+
+# clusterout_sort  - Sort some output files by decreasing abundance instead of input order.
 
     echo "$denoised" >> "$denoise_dir/denoised-reads.txt"
     echo "$denoised DONE"
@@ -165,6 +168,8 @@ do
         --sizein \
         --nonchimeras "${nochim_dir}/${nochim}" \
         --uchimeout "${nochim_dir}/${base_name}_uchime.txt" \
+        --maxseqlength 150 \
+        --minseqlength 50 \
         >> "${nochim_dir}/nochim.out" 2>&1
 
     echo "$nochim" >> "$nochim_dir/nochim-reads.txt"
