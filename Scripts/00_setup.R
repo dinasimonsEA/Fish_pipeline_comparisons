@@ -41,7 +41,7 @@ get_files <- function(results_loc) {
   dir_abspath <- normalizePath(results_loc, mustWork = TRUE)
   file_paths <- list.files(
     path = dir_abspath,
-    pattern = "\\.fastq\\.gz$",
+    pattern = "\\.(fastq|fq)\\.gz$",
     full.names = TRUE
   )
   return(file_paths)
@@ -52,39 +52,44 @@ make_manifest <- function(path) {
 
   files <- list.files(
     path,
-    pattern = "\\.fastq\\.gz$",
+    pattern = "\\.(fastq|fq)\\.gz$",
     full.names = TRUE
   )
 
   if (length(files) == 0) {
-    stop("No .fastq.gz files found in the directory.")
+    stop("No .fastq.gz or .fq.gz files found in the directory.")
   }
 
   filenames <- basename(files)
 
   # Detect direction (R1 / R2 / _1 / _2)
   direction <- ifelse(
-    grepl("(_R1_|\\.R1\\.|_1\\.fastq\\.gz$)", filenames),
+    grepl("(_R1_|\\.R1\\.|_1\\.(fastq|fq)\\.gz$)", filenames),
     "forward",
     ifelse(
-      grepl("(_R2_|\\.R2\\.|_2\\.fastq\\.gz$)", filenames),
+      grepl("(_R2_|\\.R2\\.|_2\\.(fastq|fq)\\.gz$)", filenames),
       "reverse",
       NA
     )
   )
 
   if (any(is.na(direction))) {
-    stop("Some files do not contain a valid forward/reverse identifier.")
+    stop(
+      paste(
+        "Some files do not contain a valid forward/reverse identifier:",
+        paste(filenames[is.na(direction)], collapse = ", ")
+      )
+    )
   }
 
-  # Extract sampleID for all naming schemes
+  # Extract sampleID for different naming schemes
   sampleID <- ifelse(
     grepl("_R[12]_", filenames),
-    sub("(_R[12]_.*)$", "", filenames),                      # Illumina format
+    sub("(_R[12]_.*)$", "", filenames),                    # Illumina format
     ifelse(
       grepl("\\.R[12]\\.", filenames),
-      sub("(\\.R[12]\\.fastq\\.gz)$", "", filenames),         # Dot format
-      sub("(_[12]\\.fastq\\.gz)$", "", filenames)             # New _1/_2 format
+      sub("(\\.R[12]\\.(fastq|fq)\\.gz)$", "", filenames), # Dot format
+      sub("(_[12]\\.(fastq|fq)\\.gz)$", "", filenames)     # _1/_2 format
     )
   )
 
