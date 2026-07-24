@@ -80,6 +80,8 @@ do
         --fastq_filter "${merge_dir}/${merged}" \
         --fastq_maxee 2.0 \
         --relabel Filt \
+        --fastq_minlen 50 \
+        --fastq_maxlen 150 \
         --fastaout "${filter_dir}/${filtered}" \
         >> "${filter_dir}/filter.out" 2>&1
 
@@ -168,8 +170,10 @@ do
         --sizein \
         --nonchimeras "${nochim_dir}/${nochim}" \
         --uchimeout "${nochim_dir}/${base_name}_uchime.txt" \
-        --maxseqlength 150 \
-        --minseqlength 50 \
+        #--maxseqlength 150 \
+        #no longer being recognised as an option, added to filtering step instead
+        #--minseqlength 50 \
+        #no longer being recognised as an option
         >> "${nochim_dir}/nochim.out" 2>&1
 
     echo "$nochim" >> "$nochim_dir/nochim-reads.txt"
