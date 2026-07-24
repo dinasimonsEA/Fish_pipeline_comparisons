@@ -8,7 +8,7 @@ import numpy as np
 # set variables -----------------------------------------------------
 #===================================================================
 
-datasets = ["Windermere_2017", "Marchamley", "RingTrial_Sean"] # folder names
+datasets = ["Windermere_2017", "Marchamley", "RingTrial_Sean", "Simulated"] # folder names
 base_path = ["Data/Processed"]
 denoise_method = ["DADA2", "VSEARCH", "MetaBEAT"] # denoising methods
 taxonomy_method = ["RDP", "MAPseq", "BLAST", "MetaBEAT", "VSEARCH"] # taxonomy assignment methods 
@@ -32,13 +32,22 @@ for method in denoise_method:
         dataset_name = ds.lower()
         method_name = method.lower()
 
-        count_file = os.path.join(base_path, ds, f"06_ASV_counts_{method}.tsv")
-        fasta_file = os.path.join(base_path, ds, f"06_ASV_seqs_{method}.fasta")
+        count_file = None
+        fasta_file = None
+
+        for prefix in ["06", "06b"]:
+            cf = os.path.join(base_path, ds, f"{prefix}_ASV_counts_{method}.tsv")
+            ff = os.path.join(base_path, ds, f"{prefix}_ASV_seqs_{method}.fasta")
+
+            if os.path.exists(cf) and os.path.exists(ff):
+                count_file = cf
+                fasta_file = ff
+                break
 
         print(f"\nCount file location: {count_file}")
         print(f"Fasta file location: {fasta_file}")
 
-        if not os.path.exists(count_file) or not os.path.exists(fasta_file):
+        if count_file is None or fasta_file is None:
             print(f"Missing files for {ds} | {method}")
             continue
 
