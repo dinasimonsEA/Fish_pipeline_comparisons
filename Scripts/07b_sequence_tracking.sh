@@ -9,7 +9,7 @@ shopt -s nullglob
 test_data_name="$1"
 
 base="/Workspace/Users/dina.simons@environment-agency.gov.uk/Fish_pipeline_comparisons/Data"
-work="${base}/Temp/${test_data_name}/06b_vsearch_denovo_outputs"
+work="${base}/Temp/${test_data_name}/06_vsearch_denovo_outputs"
 
 mkdir -p "$work"
 

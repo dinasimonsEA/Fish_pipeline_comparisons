@@ -6,7 +6,7 @@ path <- getwd()
 # Dataset-specific directories
 output_dir   <- file.path(path, "Data", "Temp", test_data_name)
 rds_dir      <- file.path(output_dir, "R_objects")
-vsearch_dir  <- file.path(output_dir, "06b_vsearch_denovo_outputs", "05_nochim")
+vsearch_dir  <- file.path(output_dir, "06_vsearch_denovo_outputs", "05_nochim")
 processed_dir <- file.path(path, "Data", "Processed", test_data_name)
 
 # ensure dirs exist
