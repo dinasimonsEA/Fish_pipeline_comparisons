@@ -9,7 +9,8 @@ import os
 datasets = [
     "Windermere_2017",
     "RingTrial_Sean",
-    "Marchamley"
+    "Marchamley",
+    "Simulated"
 ]
 
 # ====================================================
