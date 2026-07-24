@@ -19,7 +19,7 @@ db_tmp="/tmp/blastdb"
 db_name="EA_fish_riaz_db"
 
 # input/output files
-query="${processed_dir}/06_ASV_seqs_VSEARCH.fasta"
+query="${processed_dir}/06b_ASV_seqs_VSEARCH.fasta"
 output_MFL="${processed_dir}/08_ASVs_VSEARCH_blast_EA_riaz.txt"
 #output_NCBI="${processed_dir}/08_ASVs_VSEARCH_blast_NCBI.txt"
 

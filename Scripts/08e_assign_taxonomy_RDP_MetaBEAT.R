@@ -13,9 +13,6 @@ processed_dir <- file.path(path, "Data", "Processed", test_data_name)
 dir.create(rds_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(processed_dir, recursive = TRUE, showWarnings = FALSE)
 
-# read in the R object
-seqtab.nochim <- readRDS(file = file.path(rds_dir, "06_seqtab.nochim.rds"))
-
 # read and format in METAbeat
 seqtab.metabeat <- read.fasta(
   file = file.path(processed_dir, paste0("06_ASV_seqs_MetaBEAT.fasta"))
@@ -28,23 +25,6 @@ seqs_metabeat <- toupper(seqs_metabeat)
 
 # database path
 database <- file.path(path, "Data", "Databases", "EA_custom", "EA_fish_database.riaz.AssignTaxonomy.fasta")
-
-# jono to fix nBoot, should be 1000
-# assign taxonomy (dada2)
-taxa <- assignTaxonomy(
-  seqtab.nochim,
-  database,
-  tryRC = TRUE,
-  verbose = TRUE,
-  multithread = TRUE,
-  minBoot = 90,
-  outputBootstraps = TRUE
-)
-
-boot_dada2<-taxa[["boot"]]
-taxa_dada2<-taxa[["tax"]]
-taxa_dada2_print <- taxa_dada2
-rownames(taxa_dada2_print) <- NULL
 
 # assign taxonomy (metabeat)
 taxa_mb <- assignTaxonomy(
@@ -67,21 +47,6 @@ db_name <- "EA_fish_riaz"
 
 # write taxonomy table
 write.table(
-  taxa_dada2,
-  file = file.path(processed_dir, paste0("08_assigned_taxonomy_DADA2_", db_name, ".csv")),
-  sep = ",",
-  quote = FALSE
-)
-
-write.table(
-  boot_dada2,
-  file = file.path(processed_dir, paste0("08_bootstraps_DADA2_", db_name, ".csv")),
-  sep = ",",
-  quote = FALSE
-)
-
-# write taxonomy table
-write.table(
   taxa_metabeat,
   file = file.path(processed_dir, paste0("08_assigned_taxonomy_MetaBEAT_", db_name, ".csv")),
   sep = ",",
@@ -96,5 +61,4 @@ write.table(
 )
 
 # save R object
-saveRDS(taxa_dada2, file = file.path(rds_dir, "08_taxa.rds"))
 saveRDS(taxa_metabeat, file = file.path(rds_dir, "08_taxa_metabeat.rds"))
